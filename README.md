@@ -19,4 +19,4 @@
 6. [Лабораторная 6 (сокеты)](semester2/lab6_sockets)
 7. [Лабораторная 7 (системный вызов open)](semester2/lab7_open/report.pdf)
 8. [Лабораторная 8 (виртуальная ФС)](semester2/lab8_vfs)
-9. not ready
+9. [Лабораторная 9 (обработчики прерываний)](semester2/lab9_interrupts)
