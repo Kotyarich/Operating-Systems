@@ -13,7 +13,6 @@ MODULE_DESCRIPTION("myfs");
 
 static int number = 31;
 static struct myfs_inode **line = NULL;
-static int sco = 0;
 static int occupied = 0;
 struct kmem_cache *cache = NULL;
 
@@ -32,13 +31,12 @@ static struct super_operations const myfs_super_ops = {
     .drop_inode = generic_delete_inode,
 };
 
-void co(void *p) {
-    *(int *) p = (int) p;
-    sco++;
-}
-
 struct myfs_inode *get_inode_from_cache(void) {
-    return occupied == number? NULL : line[occupied++];
+    if (occupied == number) {
+        return NULL;
+    }
+    line[occupied] = kmem_cache_alloc(cache, GFP_KERNEL);
+    return line[occupied++];
 }
 
 static struct inode *myfs_make_inode(struct super_block *sb, int mode) {
@@ -50,7 +48,7 @@ static struct inode *myfs_make_inode(struct super_block *sb, int mode) {
         ret->i_size = PAGE_SIZE;
         ret->i_atime = ret->i_mtime = ret->i_ctime = current_time(ret);
         my_inode = get_inode_from_cache();
-        if (my_inode != NULL) {
+        if (my_inode) {
             my_inode->i_mode = ret->i_mode;
             my_inode->i_ino = ret->i_ino;
         }
@@ -86,7 +84,7 @@ static int myfs_fill_sb(struct super_block *sb, void *data, int silent) {
 }
 
 static struct dentry *myfs_mount(struct file_system_type *type, int flags, char const *dev, void *data) {
-    struct dentry *const entry = mount_bdev(type, flags, dev, data, myfs_fill_sb);
+    struct dentry *const entry = mount_nodev(type, flags, data, myfs_fill_sb);
     if (IS_ERR(entry))
         printk(KERN_ERR "MYFS mounting failed!\n");
     else
@@ -98,47 +96,29 @@ static struct file_system_type myfs_type = {
     .owner = THIS_MODULE,
     .name = "myfs",
     .mount = myfs_mount,
-    .kill_sb = kill_block_super,
+    .kill_sb = kill_anon_super,
 };
 
 static int __init myfs_init(void) {
     int i, ret;
 
-    line = kmalloc(sizeof(void *) *number, GFP_KERNEL);
+    line = kmalloc(sizeof(void *) * number, GFP_KERNEL);
     if (!line) {
         printk(KERN_ERR "MYFS kmalloc error\n" );
-        kfree(line);
         return -ENOMEM;
     }
 
-    cache = kmem_cache_create(SLABNAME, sizeof(struct myfs_inode), 0, SLAB_HWCACHE_ALIGN, co);
+    cache = kmem_cache_create(SLABNAME, sizeof(struct myfs_inode), 0, SLAB_POISON, NULL);
     if (!cache) {
         printk(KERN_ERR "MYFS kmem_cache_create error\n" );
-        kmem_cache_destroy(cache);
         kfree(line);
         return -ENOMEM;
     }
-
-    for (i = 0; i < number; i++) {
-        line[i] = NULL;
-        if (NULL == (line[i] = kmem_cache_alloc(cache, GFP_KERNEL))) {
-            printk(KERN_ERR "MYFS kmem_cache_alloc error\n" );
-            for (; i >= 0; i--) {
-                kmem_cache_free(cache, line[i]);
-            }
-            kmem_cache_destroy(cache);
-            kfree(line);
-            return -ENOMEM;
-        }
-    }
-    printk(KERN_INFO "MYFS allocate %d objects into slab: %s\n", number, SLABNAME);
-    printk(KERN_INFO "MYFS object size %d bytes, full size %ld bytes\n", sizeof(struct myfs_inode),
-        (long) sizeof(struct myfs_inode) * number);
-    printk(KERN_INFO "MYFS constructor called %d times\n", sco);
 
     ret = register_filesystem(&myfs_type);
     if (ret != 0) {
         printk(KERN_ERR "MYFS_MODULE cannot register filesystem!\n");
+        kmem_cache_destroy(cache);
         return ret;
     }
     printk(KERN_DEBUG "MYFS_MODULE loaded!\n");
@@ -148,7 +128,7 @@ static int __init myfs_init(void) {
 static void __exit myfs_exit(void) {
     int i, ret;
 
-    for (i = 0; i < number; i++) {
+    for (i = 0; i < occupied; i++) {
         kmem_cache_free(cache, line[i]);
     }
     kmem_cache_destroy(cache);
