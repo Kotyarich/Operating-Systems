@@ -25,8 +25,11 @@ void tasklet(unsigned long data) {
 }
 
 static irqreturn_t my_interrupt(int irq, void *dev_id) {
-    printk(KERN_INFO "MY_INTERRUP calling tasklet_schedule\n");
-    tasklet_schedule(&my_tasklet);
+    if (irq == IRQ) {
+        printk(KERN_INFO "MY_INTERRUP calling tasklet_schedule\n");
+        tasklet_schedule(&my_tasklet);
+        return IRQ_HANDLED;
+    }
     return IRQ_NONE;
 }
 

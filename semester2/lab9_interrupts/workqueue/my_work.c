@@ -19,8 +19,11 @@ void my_workqueue_function(struct work_struct *work) {
 DECLARE_WORK(workname, my_workqueue_function);
 
 static irqreturn_t my_interrupt(int irq, void *dev) {
-    printk(KERN_INFO "MY_INTERRUPT: starting\n");
-    queue_work(wq, &workname);
+    if (irq == IRQ) {
+        printk(KERN_INFO "MY_INTERRUPT: starting\n");
+        queue_work(wq, &workname);
+        return IRQ_HANDLED;
+    }
     return IRQ_NONE;
 }
 
