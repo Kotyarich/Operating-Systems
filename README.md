@@ -15,7 +15,7 @@
 
 1. [Демон](semester2/lab1/main.c)
 2. [Дерево файлов](semester2/lab2)
-3. модули ядра
+3. [Загружаемые модули ядра](semester2/lab3_kernel_modules)
 4. [Виртуальная файловая система proc](semester2/lab4_proc)
 5. [Буферизованный и небуферизованный ввод/вывод](semester2/lab5_open)
 6. [Сокеты](semester2/lab6_sockets)
