@@ -22,3 +22,6 @@
 7. [Системный вызов open](semester2/lab7_open/report.pdf)
 8. [Виртуальная файловая система](semester2/lab8_vfs)
 9. [Обработчики прерываний](semester2/lab9_interrupts)
+
+Редактируемые ответы на вопросы при защите
+https://docs.google.com/document/d/1uLUtBZaUFVneaEeqj1yTMjO_S7OtDof68Vffz86HIiI/edit?usp=sharing
